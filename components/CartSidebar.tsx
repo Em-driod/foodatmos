@@ -19,8 +19,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, items, onUpd
   };
 
   const subtotal = items.reduce((sum, item) => sum + (getItemPriceWithProteins(item) * item.quantity), 0);
-  const deliveryFee = subtotal > 0 ? 1500 : 0;
-  const total = subtotal + deliveryFee;
+  const total = subtotal;
 
   return (
     <>
@@ -129,11 +128,9 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, items, onUpd
                 <span>Subtotal</span>
                 <span>₦{subtotal.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-stone-400 text-sm font-black uppercase tracking-widest">
-                <span>Delivery</span>
-                <span>{deliveryFee > 0 ? `₦${deliveryFee.toLocaleString()}` : <span className="text-emerald-400">FREE</span>}</span>
-              </div>
+
               <div className="h-px bg-stone-200 my-4" />
+
               <div className="flex justify-between items-end">
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400/60">Total</span>
                 <span className="text-2xl sm:text-3xl font-serif font-black">₦{total.toLocaleString()}</span>

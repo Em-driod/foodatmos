@@ -23,12 +23,15 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [showAddressHelp, setShowAddressHelp] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
+  const [locationConfirmed, setLocationConfirmed] = useState(false);
   const [details, setDetails] = useState<CheckoutDetails>({
     fullName: '',
     email: '',
     phone: '',
     address: '',
     deliveryMethod: 'delivery',
+    deliveryCoordinates: undefined,
+    deliveryDistance: undefined,
     paymentMethod: 'card' // Default to card for Paystack redirection
   });
 
@@ -119,6 +122,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
     try {
       const location = await getCurrentLocation();
       setUserLocation(location);
+      setLocationConfirmed(true);
       
       // Get address suggestions based on detected area
       const suggestions = getAddressSuggestions(location.area);
@@ -271,18 +275,22 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
             </div>
 
             <div className="pt-10 space-y-4">
-              <div className="flex justify-between text-xs font-black uppercase tracking-widest text-amber-400">
+              <div className="flex justify-between text-stone-600 text-sm font-black uppercase tracking-widest">
                 <span>Subtotal</span>
                 <span>₦{subtotal.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-xs font-black uppercase tracking-widest text-amber-200/40">
-                <span>Delivery Fee</span>
-                <span>{deliveryFee > 0 ? `₦${deliveryFee.toLocaleString()}` : <span className="text-emerald-400 font-black">FREE</span>}</span>
-              </div>
-              <div className="h-px bg-white/10 my-4" />
-              <div className="flex justify-between items-end">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400/60">Total</span>
-                <span className="text-3xl font-serif font-black">₦{total.toLocaleString()}</span>
+              {details.deliveryMethod === 'delivery' && deliveryFee > 0 && (
+                <>
+                  <div className="flex justify-between text-stone-600 text-sm font-black uppercase tracking-widest">
+                    <span>Delivery Fee</span>
+                    <span>₦{deliveryFee.toLocaleString()}</span>
+                  </div>
+                  <div className="h-px bg-amber-200 my-3" />
+                </>
+              )}
+              <div className="flex justify-between">
+                <span className="text-[10px] font-black uppercase tracking-widest text-amber-600/60">Total</span>
+                <span className="text-2xl sm:text-3xl font-serif font-black text-amber-950">₦{total.toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -406,7 +414,11 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
                                 setGeocodingError(null);
                               }}
                               placeholder="Enter your address (e.g., 123 Ahmadu Bello Way, Ilorin)"
-                              className="w-full px-3 py-3 sm:px-4 sm:py-4 pr-12 bg-stone-50 border border-stone-200 rounded-xl sm:rounded-2xl text-stone-900 placeholder-stone-400 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200"
+                              className={`w-full px-3 py-3 sm:px-4 sm:py-4 pr-12 rounded-xl sm:rounded-2xl text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200 ${
+                                locationConfirmed 
+                                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 placeholder-emerald-600' 
+                                  : 'bg-stone-50 border-stone-200 text-stone-900 placeholder-stone-400'
+                              }`}
                               onKeyPress={(e) => {
                                 if (e.key === 'Enter') {
                                   handleAddressGeocode();
@@ -416,8 +428,11 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
                             <button
                               onClick={handleAddressGeocode}
                               disabled={isGeocoding}
-                              className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 sm:p-2 bg-amber-500 text-white rounded-lg sm:rounded-xl hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                            >
+                              className={`absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-200 ${
+                                locationConfirmed
+                                  ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+                                  : 'bg-amber-500 text-white hover:bg-amber-600'
+                              } disabled:opacity-50 disabled:cursor-not-allowed`}>
                               {isGeocoding ? (
                                 <Loader2 size={14} className="sm:w-4 sm:h-4 animate-spin" />
                               ) : (
@@ -425,23 +440,23 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
                               )}
                             </button>
                           </div>
-                          <button
-                            onClick={handleDetectLocation}
-                            disabled={isDetectingLocation}
-                            className="px-3 py-3 sm:px-4 sm:py-4 bg-emerald-500 text-white rounded-xl sm:rounded-2xl hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2"
-                          >
-                            {isDetectingLocation ? (
-                              <Loader2 size={14} className="animate-spin" />
-                            ) : (
-                              <Map size={14} />
-                            )}
-                            <span className="hidden sm:inline text-xs font-black">Detect Area</span>
-                          </button>
                         </div>
                         
                         {geocodingError && (
                           <div className="bg-red-50 border border-red-200 rounded-xl p-3">
                             <p className="text-red-600 text-xs font-medium">{geocodingError}</p>
+                          </div>
+                        )}
+                        
+                        {/* Location Confirmation */}
+                        {locationConfirmed && userLocation && (
+                          <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 size={16} className="text-emerald-600" />
+                              <span className="text-sm font-medium text-emerald-800">
+                                Area has been detected: {userLocation.area}
+                              </span>
+                            </div>
                           </div>
                         )}
                         
@@ -550,14 +565,18 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
                   <span>Subtotal</span>
                   <span>₦{subtotal.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-stone-600 text-sm font-black uppercase tracking-widest">
-                  <span>Atmos Fee</span>
-                  <span>{deliveryFee > 0 ? `₦${deliveryFee.toLocaleString()}` : <span className="text-emerald-600 font-black">FREE</span>}</span>
-                </div>
-                <div className="h-px bg-amber-200 my-3" />
-                <div className="flex justify-between items-end">
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-600/60">Total</span>
-                  <span className="text-2xl font-serif font-black text-amber-950">₦{total.toLocaleString()}</span>
+                {details.deliveryMethod === 'delivery' && deliveryFee > 0 && (
+                  <>
+                    <div className="flex justify-between text-stone-600 text-sm font-black uppercase tracking-widest">
+                      <span>Atmos Fee</span>
+                      <span>₦{deliveryFee.toLocaleString()}</span>
+                    </div>
+                    <div className="h-px bg-amber-200 my-3" />
+                  </>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-amber-600/60">Total</span>
+                  <span className="text-2xl sm:text-3xl font-serif font-black text-amber-950">₦{total.toLocaleString()}</span>
                 </div>
               </div>
 
