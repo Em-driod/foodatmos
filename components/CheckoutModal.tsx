@@ -199,6 +199,11 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
       setStep('processing');
       setError(null);
 
+      // Generate verification code matching backend format
+      const verificationCode = details.deliveryMethod === 'pickup' 
+        ? `ATMOS-P-${Math.floor(1000 + Math.random() * 9000)}`
+        : `ATMOS-D-${Math.floor(1000 + Math.random() * 9000)}`;
+      
       const orderData = {
         items: items.map(item => ({
           product: item.id || item._id,
@@ -211,17 +216,13 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
         address: details.address || 'PICKUP',
         deliveryMethod: details.deliveryMethod,
         deliveryCoordinates: details.deliveryCoordinates,
-        deliveryDistance: details.deliveryDistance
+        deliveryDistance: details.deliveryDistance,
+        verificationCode
       };
 
       console.log('Sending order data:', orderData);
       console.log('Cart items:', items);
 
-      // Generate verification code matching backend format
-      const verificationCode = details.deliveryMethod === 'pickup' 
-        ? `ATMOS-P-${Math.floor(1000 + Math.random() * 9000)}`
-        : `ATMOS-D-${Math.floor(1000 + Math.random() * 9000)}`;
-      
       sessionStorage.setItem('verificationCode', verificationCode);
       sessionStorage.setItem('deliveryMethod', details.deliveryMethod);
 
