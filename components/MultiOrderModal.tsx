@@ -88,7 +88,7 @@ const MultiOrderModal: React.FC<MultiOrderModalProps> = ({ isOpen, onClose, item
         onClose();
     };
 
-    const availableProteins = item.proteins || [];
+    const availableProteins = proteins;
 
     return (
         <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 sm:p-6">
