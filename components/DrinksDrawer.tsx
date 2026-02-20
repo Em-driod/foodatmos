@@ -1,21 +1,34 @@
 
-import React, { useState, useEffect } from 'react';
-import { X, Milk, Plus, Minus, Star, Flame } from 'lucide-react';
-import { FoodItem, CartItem } from '../types';
-import { FOOD_ITEMS } from '../constants';
-import { FoodCategory } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, Milk, Plus, Minus, Star, Flame, Search, Sparkles } from 'lucide-react';
+import { FoodItem, FoodCategory, CartItem, ProteinOption } from '../types';
+import FoodCard from './FoodCard';
+
 
 interface DrinksDrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  products: FoodItem[];
   cart: CartItem[];
-  onAddToCart: (item: FoodItem) => void;
-  onUpdateQuantity: (cartItemId: string, delta: number) => void;
-  onRemoveFromCart: (cartItemId: string) => void;
+  onAddToCart: (item: FoodItem, proteins?: ProteinOption[]) => void;
+  onUpdateQuantity: (id: string, delta: number) => void;
+  onRemoveFromCart: (id: string) => void;
 }
 
-const DrinksDrawer: React.FC<DrinksDrawerProps> = ({ isOpen, onClose, cart, onAddToCart, onUpdateQuantity, onRemoveFromCart }) => {
-  const drinks = FOOD_ITEMS.filter(item => item.category === FoodCategory.DRINKS);
+const DrinksDrawer: React.FC<DrinksDrawerProps> = ({
+  isOpen,
+  onClose,
+  products,
+  cart,
+  onAddToCart,
+  onUpdateQuantity,
+  onRemoveFromCart
+}) => {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const drinks = useMemo(() => {
+    return products.filter(item => item.category === FoodCategory.DRINKS);
+  }, [products]);
   const [tempDrinks, setTempDrinks] = useState<CartItem[]>([]);
 
   useEffect(() => {

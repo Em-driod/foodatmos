@@ -1,8 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
-import { Star, Plus, Minus, Flame, Layers, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { Star, Plus, Minus, Flame } from 'lucide-react';
 import { FoodItem, FoodCategory, CartItem, ProteinOption } from '../types';
-import { FOOD_ITEMS, PROTEIN_OPTIONS } from '../constants';
 
 interface FoodCardProps {
   item: FoodItem;

@@ -1,6 +1,7 @@
 
 export interface FoodItem {
   id: string;
+  _id?: string;
   name: string;
   description: string;
   price: number;
@@ -9,13 +10,14 @@ export interface FoodItem {
   rating: number;
   calories: number;
   tags: string[];
+  proteins?: ProteinOption[];
 }
 
 export enum FoodCategory {
-  ALL = 'Full Menu',
-  GRAINS = 'The Grains',
-  SIDES = 'The Grill & Sides',
-  DRINKS = 'Chilled Beverages'
+  ALL = 'All',
+  GRAINS = 'Grains',
+  SIDES = 'Sides',
+  DRINKS = 'Drinks'
 }
 
 export interface CartItem extends FoodItem {
@@ -26,6 +28,7 @@ export interface CartItem extends FoodItem {
 
 export interface ProteinOption {
   id: string;
+  _id?: string;
   name: string;
   price: number;
 }
@@ -35,5 +38,8 @@ export interface CheckoutDetails {
   email: string;
   phone: string;
   address: string;
+  deliveryMethod: 'delivery' | 'pickup';
+  deliveryCoordinates?: { lat: number; lng: number };
+  deliveryDistance?: number;
   paymentMethod: 'card' | 'bank_transfer';
 }

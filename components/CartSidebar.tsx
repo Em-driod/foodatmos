@@ -36,7 +36,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, items, onUpd
               <ShoppingBag size={24} />
             </div>
             <div>
-              <h2 className="text-2xl font-serif font-black tracking-tight">Your Atmos Pack</h2>
+              <h2 className="text-xl sm:text-2xl font-serif font-black tracking-tight">Your Atmos Pack</h2>
               <p className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-300">Curated Selection</p>
             </div>
           </div>
@@ -124,28 +124,28 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, items, onUpd
 
         {items.length > 0 && (
           <div className="p-10 border-t border-stone-100 bg-stone-50/50 space-y-8">
-            <div className="space-y-4">
+            <div className="pt-10 space-y-4">
               <div className="flex justify-between text-stone-400 text-sm font-black uppercase tracking-widest">
-                <span>Pack Subtotal</span>
+                <span>Subtotal</span>
                 <span>₦{subtotal.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-stone-400 text-sm font-black uppercase tracking-widest">
-                <span>Atmos Concierge Delivery</span>
-                <span>₦{deliveryFee.toLocaleString()}</span>
+                <span>Delivery</span>
+                <span>{deliveryFee > 0 ? `₦${deliveryFee.toLocaleString()}` : <span className="text-emerald-400">FREE</span>}</span>
               </div>
               <div className="h-px bg-stone-200 my-4" />
-              <div className="flex justify-between text-amber-950 font-black text-4xl font-serif pt-2">
-                <span>Total Due</span>
-                <span className="text-amber-800">₦{total.toLocaleString()}</span>
+              <div className="flex justify-between items-end">
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400/60">Total</span>
+                <span className="text-2xl sm:text-3xl font-serif font-black">₦{total.toLocaleString()}</span>
               </div>
             </div>
 
             <button
               onClick={onCheckout}
-              className="group relative w-full bg-amber-950 hover:bg-black text-white py-8 rounded-[2.5rem] font-black flex items-center justify-center gap-4 shadow-[0_30px_60px_rgba(69,26,3,0.3)] hover:scale-[1.02] active:scale-95 transition-all text-xl uppercase tracking-[0.2em] overflow-hidden"
+              className="group relative w-full bg-amber-950 hover:bg-black text-white py-6 sm:py-8 rounded-[2rem] sm:rounded-[2.5rem] font-black flex items-center justify-center gap-3 sm:gap-4 shadow-[0_30px_60px_rgba(69,26,3,0.3)] hover:scale-[1.02] active:scale-95 transition-all text-base sm:text-xl uppercase tracking-[0.2em] overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/10 to-amber-400/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-              Complete & Chop <ArrowRight size={28} />
+              <span className="text-sm sm:text-base">Complete & Chop</span> <ArrowRight size={20} className="sm:w-7 sm:h-7" />
             </button>
           </div>
         )}
