@@ -74,7 +74,7 @@ export const geocodeAddress = async (address: string): Promise<GeocodingResult |
   } catch (error) {
     console.error('Geocoding error:', error);
     
-    // Final fallback: Return Ilorin city center
+    // Final fallback: Return Ilorin city center with more precise coordinates
     console.log('Using Ilorin city center as fallback');
     return {
       lat: 8.4966,
@@ -95,6 +95,12 @@ export const calculateDistance = (
   lat2: number,
   lng2: number
 ): number => {
+  // Validate coordinates
+  if (!isValidCoordinate(lat1, lng1) || !isValidCoordinate(lat2, lng2)) {
+    console.error('Invalid coordinates provided:', { lat1, lng1, lat2, lng2 });
+    return 0;
+  }
+
   // Haversine formula to calculate distance between two points
   const R = 6371; // Earth's radius in kilometers
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -104,5 +110,19 @@ export const calculateDistance = (
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
     Math.sin(dLng/2) * Math.sin(dLng/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
+  const distance = R * c;
+  
+  // Round to 2 decimal places for consistency
+  return Math.round(distance * 100) / 100;
+};
+
+// Coordinate validation function
+const isValidCoordinate = (lat: number, lng: number): boolean => {
+  return (
+    typeof lat === 'number' && 
+    typeof lng === 'number' &&
+    lat >= -90 && lat <= 90 &&
+    lng >= -180 && lng <= 180 &&
+    !isNaN(lat) && !isNaN(lng)
+  );
 };

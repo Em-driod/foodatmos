@@ -1,10 +1,25 @@
-
 import React, { useState, useEffect } from 'react';
-import { X, ArrowRight, CreditCard, Landmark, ShieldCheck, Copy, CheckCircle2, Loader2, Sparkles, ChefHat, MapPin, Search, Map, Navigation } from 'lucide-react';
-import { CartItem, CheckoutDetails } from '../types';
-import { createOrder } from '../services/api';
-import { geocodeAddress, calculateDistance } from '../services/geocoding';
+import { X, MapPin, Loader2, Search, CheckCircle2, ChevronRight, AlertCircle, ShieldCheck, Landmark, Navigation, ArrowRight, Sparkles, ChefHat } from 'lucide-react';
+import { ILORIN_AREAS, getAllLGAs, getAreasByLGA, getAreaById, getKitchenLocation } from '../services/ilorinAreas';
+import { calculateDistance } from '../services/geocoding';
 import { getCurrentLocation, getAddressSuggestions, formatAddressHelp, UserLocation } from '../services/locationHelper';
+
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  selectedProteins?: { name: string; price: number }[];
+}
+
+interface CheckoutDetails {
+  fullName: string;
+  email: string;
+  phone: string;
+  address: string;
+  deliveryMethod: 'pickup' | 'delivery';
+  deliveryDistance?: number;
+}
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -19,6 +34,12 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
   const [addressInput, setAddressInput] = useState('');
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geocodingError, setGeocodingError] = useState<string | null>(null);
+  const [addressFormatError, setAddressFormatError] = useState<string | null>(null);
+  
+  // Area selection state
+  const [selectedLGA, setSelectedLGA] = useState<string>('');
+  const [selectedArea, setSelectedArea] = useState<string>('');
+  const [isFindingLocation, setIsFindingLocation] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [showAddressHelp, setShowAddressHelp] = useState(false);
@@ -92,7 +113,9 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
   const subtotal = items.reduce((sum, item) => sum + (getItemPriceWithProteins(item) * item.quantity), 0);
 
   // Kitchen Location (Oke Ogba, opposite nepa office, afon road, Ilorin)
-  const KITCHEN_COORDS = { lat: 8.4239, lng: 4.6002 };
+  // Using central Ilorin coordinates as most accurate reference point
+  // TODO: Get exact GPS coordinates for NEPA office for maximum accuracy
+  const KITCHEN_COORDS = { lat: 8.5000, lng: 4.5500 };
 
   const calculateFee = (dist: number) => {
     if (dist <= 2) return 400;
@@ -115,6 +138,100 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const d = R * c;
     return d;
+  };
+
+  // Simple area selection handlers
+  const handleLGAChange = (lga: string) => {
+    setSelectedLGA(lga);
+    setSelectedArea(''); // Reset area when LGA changes
+    setLocationConfirmed(false);
+    setGeocodingError(null);
+  };
+
+  const handleAreaChange = (areaId: string) => {
+    setSelectedArea(areaId);
+    setLocationConfirmed(false);
+    setGeocodingError(null);
+  };
+
+  // Address detail handlers for preset locations
+  const handleStreetNameChange = (streetName: string) => {
+    setAddressInput(prev => {
+      const parts = prev.split(', ');
+      parts[0] = streetName;
+      return parts.join(', ');
+    });
+    setLocationConfirmed(false);
+    setGeocodingError(null);
+  };
+
+  const handleRoadNameChange = (roadName: string) => {
+    setAddressInput(prev => {
+      const parts = prev.split(', ');
+      if (parts.length < 2) parts.push(roadName);
+      else parts[1] = roadName;
+      return parts.join(', ');
+    });
+    setLocationConfirmed(false);
+    setGeocodingError(null);
+  };
+
+  const handleAreaNameChange = (areaName: string) => {
+    setAddressInput(prev => {
+      const parts = prev.split(', ');
+      if (parts.length < 3) parts.push(areaName);
+      else parts[2] = areaName;
+      return parts.join(', ');
+    });
+    setLocationConfirmed(false);
+    setGeocodingError(null);
+  };
+
+  const handleFindLocation = async () => {
+    if (!selectedArea) {
+      setGeocodingError('Please select an area');
+      return;
+    }
+
+    setIsFindingLocation(true);
+    setGeocodingError(null);
+
+    try {
+      const area = getAreaById(selectedArea);
+      if (!area) {
+        setGeocodingError('Invalid area selected');
+        return;
+      }
+
+      const kitchen = getKitchenLocation();
+      const distance = calculateDistance(
+        kitchen.coordinates.lat,
+        kitchen.coordinates.lng,
+        area.coordinates.lat,
+        area.coordinates.lng
+      );
+
+      console.log('Area selected:', area.name);
+      console.log('Distance from kitchen:', distance);
+
+      setDetails(prev => ({
+        ...prev,
+        address: `${area.name}, ${area.lga}`,
+        deliveryDistance: distance
+      }));
+
+      setLocationConfirmed(true);
+      setUserLocation({
+        area: area.name,
+        coordinates: area.coordinates
+      });
+
+    } catch (error) {
+      console.error('Location finding error:', error);
+      setGeocodingError('Failed to get location. Please try again.');
+    } finally {
+      setIsFindingLocation(false);
+    }
   };
 
   const handleDetectLocation = async () => {
@@ -144,60 +261,18 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
     }
   };
 
-  const handleAddressGeocode = async () => {
-    if (!addressInput.trim()) {
-      setGeocodingError('Please enter an address');
-      return;
-    }
-
-    setIsGeocoding(true);
-    setGeocodingError(null);
-
-    try {
-      console.log('Starting geocoding for:', addressInput);
-      const result = await geocodeAddress(addressInput);
-      
-      if (result) {
-        console.log('Geocoding successful:', result);
-        
-        // Kitchen coordinates
-        const kitchenCoords = { lat: 8.4239, lng: 4.6002 };
-        
-        // Calculate distance
-        const distance = calculateDistance(
-          kitchenCoords.lat,
-          kitchenCoords.lng,
-          result.lat,
-          result.lng
-        );
-
-        console.log('Calculated distance:', distance);
-
-        // Update details with geocoded data
-        setDetails(prev => ({
-          ...prev,
-          address: result.display_name,
-          deliveryCoordinates: { lat: result.lat, lng: result.lng },
-          deliveryDistance: distance
-        }));
-
-        // Update map if it exists
-        if (mapRef.current && markerRef.current) {
-          mapRef.current.setView([result.lat, result.lng], 15);
-          markerRef.current.setLatLng([result.lat, result.lng]);
-        }
-      } else {
-        console.log('Geocoding returned null');
-        setGeocodingError('Address not found. Try: "123 Ahmadu Bello Way, Tanke, Ilorin" or click "Need help writing your address?" for examples.');
-      }
-    } catch (error) {
-      console.error('Geocoding failed:', error);
-      setGeocodingError('Failed to locate address. Please check your internet connection and try again.');
-    } finally {
-      setIsGeocoding(false);
-    }
+  // Create order function (placeholder - would connect to backend)
+  const createOrder = async (orderData: any) => {
+    console.log('Creating order:', orderData);
+    // This would normally send order to backend and get payment URL
+    return { 
+      success: true, 
+      orderId: 'ORDER-' + Date.now(),
+      authorization_url: 'https://paystack.co/pay/example' // Placeholder payment URL
+    };
   };
 
+  
   const handleInitiatePayment = async () => {
     try {
       setStep('processing');
@@ -403,44 +478,84 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
                           </div>
                         </div>
                         
-                        {/* Location Detection Button */}
+                        {/* Area Selection Dropdowns */}
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Select LGA</label>
+                            <select
+                              value={selectedLGA}
+                              onChange={(e) => handleLGAChange(e.target.value)}
+                              className={`w-full px-3 py-3 sm:px-4 sm:py-4 rounded-xl sm:rounded-2xl text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200 ${
+                                locationConfirmed 
+                                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
+                                  : 'bg-stone-50 border-stone-200 text-stone-900'
+                              }`}
+                            >
+                              <option value="">Choose LGA...</option>
+                              {getAllLGAs().map(lga => (
+                                <option key={lga} value={lga}>{lga}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Select Area</label>
+                            <select
+                              value={selectedArea}
+                              onChange={(e) => handleAreaChange(e.target.value)}
+                              disabled={!selectedLGA}
+                              className={`w-full px-3 py-3 sm:px-4 sm:py-4 rounded-xl sm:rounded-2xl text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200 ${
+                                locationConfirmed 
+                                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
+                                  : selectedLGA
+                                  ? 'bg-stone-50 border-stone-200 text-stone-900'
+                                  : 'bg-stone-100 border-stone-300 text-stone-500 cursor-not-allowed'
+                              } disabled:cursor-not-allowed`}
+                            >
+                              <option value="">Choose Area...</option>
+                              {selectedLGA && getAreasByLGA(selectedLGA).map(area => (
+                                <option key={area.id} value={area.id}>{area.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Find Location Button */}
                         <div className="flex gap-2">
                           <div className="relative flex-1">
-                            <input
-                              type="text"
-                              value={addressInput}
-                              onChange={(e) => {
-                                setAddressInput(e.target.value);
-                                setGeocodingError(null);
-                              }}
-                              placeholder="Enter your address (e.g., 123 Ahmadu Bello Way, Ilorin)"
-                              className={`w-full px-3 py-3 sm:px-4 sm:py-4 pr-12 rounded-xl sm:rounded-2xl text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200 ${
-                                locationConfirmed 
-                                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 placeholder-emerald-600' 
-                                  : 'bg-stone-50 border-stone-200 text-stone-900 placeholder-stone-400'
-                              }`}
-                              onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleAddressGeocode();
-                                }
-                              }}
-                            />
                             <button
-                              onClick={handleAddressGeocode}
-                              disabled={isGeocoding}
-                              className={`absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-200 ${
+                              onClick={handleFindLocation}
+                              disabled={!selectedArea || isFindingLocation}
+                              className={`w-full py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black flex items-center justify-center gap-3 sm:gap-4 transition-all shadow-xl active:scale-95 text-sm sm:text-base ${
                                 locationConfirmed
                                   ? 'bg-emerald-500 text-white hover:bg-emerald-600'
-                                  : 'bg-amber-500 text-white hover:bg-amber-600'
-                              } disabled:opacity-50 disabled:cursor-not-allowed`}>
-                              {isGeocoding ? (
-                                <Loader2 size={14} className="sm:w-4 sm:h-4 animate-spin" />
+                                  : 'bg-amber-950 text-white hover:bg-black'
+                              } disabled:bg-stone-200 disabled:cursor-not-allowed`}
+                            >
+                              {isFindingLocation ? (
+                                <>
+                                  <Loader2 size={16} className="animate-spin" />
+                                  Finding Location...
+                                </>
                               ) : (
-                                <Search size={14} className="sm:w-4 sm:h-4" />
+                                <>
+                                  <Search size={16} />
+                                  Find Location
+                                </>
                               )}
                             </button>
                           </div>
                         </div>
+                        
+                        {/* Address Format Error */}
+                        {addressFormatError && !locationConfirmed && (
+                          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                            <p className="text-amber-700 text-xs font-medium flex items-center gap-2">
+                              <span className="w-1 h-1 bg-amber-500 rounded-full animate-pulse"></span>
+                              {addressFormatError}
+                            </p>
+                          </div>
+                        )}
                         
                         {geocodingError && (
                           <div className="bg-red-50 border border-red-200 rounded-xl p-3">
@@ -510,8 +625,112 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
                           </div>
                         )}
                         
+                        {/* Address Format Guide */}
+                        {!locationConfirmed && (
+                          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-sm font-black text-blue-900 flex items-center gap-2">
+                                <MapPin size={14} className="text-blue-600" />
+                                Address Format Guide
+                              </h4>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <p className="text-xs font-black text-blue-800">Required Format:</p>
+                              <p className="text-xs text-blue-700 font-medium">
+                                <strong>House Number</strong>, <strong>Street Name</strong>, <strong>Area Name</strong>
+                              </p>
+                              
+                              <div className="space-y-2">
+                                  <p className="text-xs font-medium text-blue-700">Good Examples (All Ilorin Areas):</p>
+                                  <div className="space-y-2">
+                                    <div className="p-2 bg-blue-100 rounded-lg">
+                                      <p className="text-xs text-blue-800 font-medium mb-1">Central Areas:</p>
+                                      <button
+                                        onClick={() => {
+                                          handleStreetNameChange("NEPA Office");
+                                          handleRoadNameChange("Afon Road");
+                                          handleAreaNameChange("Oke Ogba");
+                                        }}
+                                        className="block w-full text-left text-xs text-blue-600 hover:text-blue-800"
+                                      >
+                                        📍 Street: NEPA Office → Road: Afon Road → Area: Oke Ogba
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          handleStreetNameChange("Kwara Hotel");
+                                          handleRoadNameChange("Road");
+                                          handleAreaNameChange("GRA");
+                                        }}
+                                        className="block w-full text-left text-xs text-blue-600 hover:text-blue-800"
+                                      >
+                                        📍 Street: Kwara Hotel → Road: Road → Area: GRA
+                                      </button>
+                                    </div>
+                                    <div className="p-2 bg-blue-100 rounded-lg">
+                                      <p className="text-xs text-blue-800 font-medium mb-1">Educational Areas:</p>
+                                      <button
+                                        onClick={() => {
+                                          handleStreetNameChange("University");
+                                          handleRoadNameChange("Road");
+                                          handleAreaNameChange("Tanke");
+                                        }}
+                                        className="block w-full text-left text-xs text-blue-600 hover:text-blue-800"
+                                      >
+                                        📍 Street: University → Road: Road → Area: Tanke
+                                      </button>
+                                    </div>
+                                    <div className="p-2 bg-blue-100 rounded-lg">
+                                      <p className="text-xs text-blue-800 font-medium mb-1">Southern Areas:</p>
+                                      <button
+                                        onClick={() => {
+                                          handleStreetNameChange("Market");
+                                          handleRoadNameChange("Road");
+                                          handleAreaNameChange("Asadam");
+                                        }}
+                                        className="block w-full text-left text-xs text-blue-600 hover:text-blue-800"
+                                      >
+                                        📍 Street: Market → Road: Road → Area: Asadam
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          handleStreetNameChange("Sango");
+                                          handleRoadNameChange("Junction");
+                                          handleAreaNameChange("Sango");
+                                        }}
+                                        className="block w-full text-left text-xs text-blue-600 hover:text-blue-800"
+                                      >
+                                        📍 Street: Sango → Road: Junction → Area: Sango
+                                      </button>
+                                    </div>
+                                    <div className="p-2 bg-blue-100 rounded-lg">
+                                      <p className="text-xs text-blue-800 font-medium mb-1">Airport Area:</p>
+                                      <button
+                                        onClick={() => {
+                                          handleStreetNameChange("Ilorin International");
+                                          handleRoadNameChange("Airport");
+                                          handleAreaNameChange("Airport");
+                                        }}
+                                        className="block w-full text-left text-xs text-blue-600 hover:text-blue-800"
+                                      >
+                                        📍 Street: Ilorin International → Road: Airport → Area: Airport
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              
+                              <div className="mt-3 p-2 bg-blue-100 rounded-lg">
+                                <p className="text-xs text-blue-800">
+                                  <strong>✅ Include:</strong> House number, street name, and Ilorin area name<br/>
+                                  <strong>❌ Avoid:</strong> Only "Ilorin" or vague descriptions
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
                         {/* General Address Help Button */}
-                        {!showAddressHelp && (
+                        {!showAddressHelp && !locationConfirmed && (
                           <button
                             onClick={() => {
                               const suggestions = getAddressSuggestions(userLocation?.area);
@@ -521,7 +740,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
                             className="text-xs text-amber-600 hover:text-amber-700 font-medium flex items-center gap-1"
                           >
                             <MapPin size={12} />
-                            Need help writing your address?
+                            Need more help with addresses?
                           </button>
                         )}
                         
