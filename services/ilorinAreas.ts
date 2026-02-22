@@ -763,8 +763,8 @@ export const getAreaById = (id: string) => {
   return ILORIN_AREAS.find(area => area.id === id);
 };
 
-// Get kitchen location (Oke Ogba)
+// Get kitchen location (Afon, Asa LGA)
 export const getKitchenLocation = () => {
-  const kitchen = ILORIN_AREAS.find(area => area.id === 'oke-ogba-west');
+  const kitchen = ILORIN_AREAS.find(area => area.id === 'afon');
   return kitchen || ILORIN_AREAS[0]; // Fallback to first area
 };
