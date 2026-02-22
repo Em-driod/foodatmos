@@ -186,7 +186,7 @@ const MultiOrderModal: React.FC<MultiOrderModalProps> = ({ isOpen, onClose, item
                             {mode === 'single' || mode === 'bulk-same' ? (
                                 <div className="space-y-8">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs font-black text-stone-300 uppercase tracking-widest">Customize Proteins</span>
+                                        <span className="text-xs font-black text-stone-300 uppercase tracking-widest">Add extra Proteins</span>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {availableProteins.map(protein => {
