@@ -120,10 +120,10 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
 
   const calculateFee = (dist: number) => {
     // Base delivery fee is ₦1000 for any delivery
-    // Add ₦300 per km after first 2km
+    // Add ₦150 per km after first 2km
     const baseFee = 1000;
     if (dist <= 2) return baseFee;
-    return baseFee + Math.ceil(dist - 2) * 300;
+    return baseFee + Math.ceil(dist - 2) * 150;
   };
 
   const deliveryFee = details.deliveryMethod === 'pickup' ? 0 : (details.deliveryDistance ? calculateFee(details.deliveryDistance) : 1000);
