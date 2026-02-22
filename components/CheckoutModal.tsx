@@ -270,7 +270,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
     console.log('Creating order:', orderData);
     
     try {
-      const response = await fetch('http://localhost:5000/api/orders', {
+      const response = await fetch('http://atmosfoodin.onrender.com/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
