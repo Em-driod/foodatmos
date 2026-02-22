@@ -332,11 +332,21 @@ const App: React.FC = () => {
                 <ul className="space-y-5 text-[12px] font-bold text-stone-500 uppercase tracking-[0.2em]">
                   <li className="flex flex-col gap-1">
                     <span className="text-amber-950">Call Us</span>
-                    <span className="font-medium normal-case text-stone-400">0800-ATMOS-SYNC</span>
+                    <a 
+                      href="tel:08069813105" 
+                      className="font-medium normal-case text-stone-400 hover:text-amber-600 transition-colors"
+                    >
+                      0806 981 3105
+                    </a>
                   </li>
                   <li className="flex flex-col gap-1">
                     <span className="text-amber-950">Email Support</span>
-                    <span className="font-medium normal-case text-stone-400">concierge@atmosfood.ng</span>
+                    <a 
+                      href="mailto:atmosglobalenterprise@gmail.com" 
+                      className="font-medium normal-case text-stone-400 hover:text-amber-600 transition-colors"
+                    >
+                      atmosglobalenterprise@gmail.com
+                    </a>
                   </li>
                 </ul>
               </div>

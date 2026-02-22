@@ -3,6 +3,7 @@ import { X, MapPin, Loader2, Search, CheckCircle2, ChevronRight, AlertCircle, Sh
 import { ILORIN_AREAS, getAllLGAs, getAreasByLGA, getAreaById, getKitchenLocation } from '../services/ilorinAreas';
 import { calculateDistance } from '../services/geocoding';
 import { getCurrentLocation, getAddressSuggestions, formatAddressHelp, UserLocation } from '../services/locationHelper';
+import PaymentInstructions from './PaymentInstructions';
 
 interface CartItem {
   id: string;
@@ -29,7 +30,7 @@ interface CheckoutModalProps {
 }
 
 const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, onPaymentSuccess }) => {
-  const [step, setStep] = useState<'details' | 'payment-redirect' | 'processing' | 'success'>('details');
+  const [step, setStep] = useState<'details' | 'payment-instructions' | 'processing' | 'success'>('details');
   const [error, setError] = useState<string | null>(null);
   const [addressInput, setAddressInput] = useState('');
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -118,11 +119,14 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
   const KITCHEN_COORDS = { lat: 8.5000, lng: 4.5500 };
 
   const calculateFee = (dist: number) => {
-    if (dist <= 2) return 400;
-    return 400 + Math.ceil(dist - 2) * 200;
+    // Base delivery fee is ₦1000 for any delivery
+    // Add ₦300 per km after first 2km
+    const baseFee = 1000;
+    if (dist <= 2) return baseFee;
+    return baseFee + Math.ceil(dist - 2) * 300;
   };
 
-  const deliveryFee = details.deliveryMethod === 'pickup' ? 0 : (details.deliveryDistance ? calculateFee(details.deliveryDistance) : 400);
+  const deliveryFee = details.deliveryMethod === 'pickup' ? 0 : (details.deliveryDistance ? calculateFee(details.deliveryDistance) : 1000);
   const total = subtotal + deliveryFee;
 
   // Haversine Distance Formula
@@ -264,12 +268,49 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
   // Create order function (placeholder - would connect to backend)
   const createOrder = async (orderData: any) => {
     console.log('Creating order:', orderData);
-    // This would normally send order to backend and get payment URL
-    return { 
-      success: true, 
-      orderId: 'ORDER-' + Date.now(),
-      authorization_url: 'https://paystack.co/pay/example' // Placeholder payment URL
-    };
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+      });
+      
+      // Check if response is OK before parsing JSON
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Response not OK:', errorText);
+        
+        // Try to parse as JSON, fallback to text
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText };
+        }
+        
+        throw new Error(errorData.message || 'Failed to create order');
+      }
+      
+      // Parse successful response
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+      
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        throw new Error('Invalid server response format');
+      }
+      
+      return result;
+    } catch (error: any) {
+      console.error('Create order error:', error);
+      throw error;
+    }
   };
 
   
@@ -277,6 +318,19 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
     try {
       setStep('processing');
       setError(null);
+
+      console.log('=== Starting Payment Process ===');
+      console.log('Current details:', details);
+      console.log('Cart items:', items);
+
+      // Validate required fields before sending
+      if (!details.fullName || !details.email || !details.phone) {
+        throw new Error('Please fill in all required fields (name, email, phone)');
+      }
+
+      if (details.deliveryMethod === 'delivery' && !details.address) {
+        throw new Error('Please provide delivery address');
+      }
 
       // Generate verification code matching backend format
       const verificationCode = details.deliveryMethod === 'pickup' 
@@ -299,23 +353,41 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
         verificationCode
       };
 
-      console.log('Sending order data:', orderData);
-      console.log('Cart items:', items);
+      console.log('Prepared order data:', JSON.stringify(orderData, null, 2));
+      console.log('Sending to: /api/orders');
 
       sessionStorage.setItem('verificationCode', verificationCode);
       sessionStorage.setItem('deliveryMethod', details.deliveryMethod);
 
       const result = await createOrder(orderData);
 
-      if (result.authorization_url) {
-        // Redirect to Paystack
-        window.location.href = result.authorization_url;
+      console.log('Order creation result:', result);
+
+      if (result.success) {
+        // Store order details for payment verification
+        sessionStorage.setItem('pendingOrder', JSON.stringify({
+          orderId: result.orderId,
+          orderReference: result.orderReference,
+          totalAmount: result.totalAmount,
+          verificationCode,
+          paymentInstructions: result.paymentInstructions
+        }));
+        
+        console.log('Moving to payment instructions step');
+        // Move to payment instructions step
+        setStep('payment-instructions');
       } else {
-        throw new Error('Failed to get payment URL');
+        console.error('Order creation failed - no success flag');
+        throw new Error(result.message || 'Failed to create order');
       }
     } catch (err: any) {
-      console.error('Payment initialization failed:', err);
-      setError(err.response?.data?.message || err.message || 'Payment service unavailable');
+      console.error('=== PAYMENT INITIALIZATION ERROR ===');
+      console.error('Error type:', typeof err);
+      console.error('Error message:', err.message);
+      console.error('Error stack:', err.stack);
+      console.error('Full error:', err);
+      
+      setError(err.message || err.response?.data?.message || 'Payment service unavailable');
       setStep('details');
     }
   };
@@ -830,6 +902,13 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
                 </p>
               </div>
             </div>
+          )}
+
+          {step === 'payment-instructions' && (
+            <PaymentInstructions 
+              onClose={onClose}
+              onPaymentSuccess={onPaymentSuccess}
+            />
           )}
 
           {step === 'success' && (
