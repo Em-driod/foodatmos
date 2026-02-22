@@ -24,9 +24,9 @@ const PaymentInstructions: React.FC<PaymentInstructionsProps> = ({ onClose, onPa
   };
 
   const handleWhatsAppShare = () => {
-    const phoneNumber = '08075389127';
+    const phoneNumber = '2348075389127';
     const message = `Hello ATMOS FOOD NG, I've made a payment for order ${orderData?.orderReference}. Please verify my payment. Order ID: ${orderData?.orderId}`;
-    const whatsappUrl = `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -152,9 +152,9 @@ const PaymentInstructions: React.FC<PaymentInstructionsProps> = ({ onClose, onPa
             <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-green-200">
               <span className="text-green-600 font-medium">WhatsApp Number:</span>
               <div className="flex items-center gap-2">
-                <span className="font-black text-green-900 font-mono">08075389127</span>
+                <span className="font-black text-green-900 font-mono">+234 807 538 9127</span>
                 <button
-                  onClick={() => copyToClipboard('08075389127')}
+                  onClick={() => copyToClipboard('+2348075389127')}
                   className="text-green-600 hover:text-green-700 p-1"
                 >
                   <Copy size={16} />
