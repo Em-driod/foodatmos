@@ -375,7 +375,7 @@ export const ILORIN_AREAS: IlorinArea[] = [
     id: 'ganmo',
     name: 'Ganmo',
     lga: 'Ifelodun',
-    coordinates: { lat: 8.467, lng: 4.567 }
+    coordinates: { lat: 0, lng: 0 } // Will be updated by geocoding
   },
 
   // Ilorin South LGA - Headquarters: Fufu
@@ -769,8 +769,48 @@ export const getAreaById = (id: string) => {
   return ILORIN_AREAS.find(area => area.id === id);
 };
 
-// Get kitchen location (Ganmo, Ifelodun LGA)
-export const getKitchenLocation = () => {
-  const kitchen = ILORIN_AREAS.find(area => area.id === 'ganmo');
-  return kitchen || ILORIN_AREAS[0]; // Fallback to first area
+// Cache for kitchen location to avoid repeated geocoding calls
+let cachedKitchenLocation: any = null;
+
+// Get kitchen location (Ganmo, Ifelodun LGA) - uses geocoding for precision
+export const getKitchenLocation = async () => {
+  // Return cached location if available
+  if (cachedKitchenLocation) {
+    console.log('Using cached kitchen location:', cachedKitchenLocation);
+    return cachedKitchenLocation;
+  }
+
+  try {
+    // Import geocoding service dynamically to avoid circular dependencies
+    const { geocodeAddress } = await import('./geocoding');
+    
+    // Try to get precise coordinates for Ganmo, Ifelodun
+    const geocodedLocation = await geocodeAddress('Ganmo, Ifelodun LGA, Kwara State');
+    
+    if (geocodedLocation) {
+      console.log('Using geocoded kitchen location:', geocodedLocation);
+      cachedKitchenLocation = {
+        id: 'ganmo',
+        name: 'Ganmo',
+        lga: 'Ifelodun',
+        coordinates: {
+          lat: geocodedLocation.lat,
+          lng: geocodedLocation.lng
+        }
+      };
+      return cachedKitchenLocation;
+    }
+  } catch (error) {
+    console.warn('Geocoding failed for kitchen location, using fallback:', error);
+  }
+  
+  // Final fallback - use Ilorin city center as default
+  console.log('Using Ilorin city center as ultimate fallback');
+  cachedKitchenLocation = {
+    id: 'ganmo',
+    name: 'Ganmo',
+    lga: 'Ifelodun',
+    coordinates: { lat: 8.4966, lng: 4.5421 } // Ilorin city center
+  };
+  return cachedKitchenLocation;
 };

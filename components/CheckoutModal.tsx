@@ -207,7 +207,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
         return;
       }
 
-      const kitchen = getKitchenLocation();
+      const kitchen = await getKitchenLocation();
       const distance = calculateDistance(
         kitchen.coordinates.lat,
         kitchen.coordinates.lng,
