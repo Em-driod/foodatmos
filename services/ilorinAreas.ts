@@ -148,6 +148,12 @@ export const ILORIN_AREAS: IlorinArea[] = [
     coordinates: { lat: 8.3833, lng: 4.8833 }
   },
   {
+    id: 'ganmo',
+    name: 'Ganmo',
+    lga: 'Ifelodun',
+    coordinates: { lat: 8.4000, lng: 4.8500 }
+  },
+  {
     id: 'idofian',
     name: 'Idofian',
     lga: 'Ifelodun',
@@ -366,11 +372,11 @@ export const ILORIN_AREAS: IlorinArea[] = [
     coordinates: { lat: 8.3650, lng: 4.6650 },
       },
   {
-    id: 'zango',
-    name: 'Zango / Zarumi',
-    lga: 'Ilorin East',
-    coordinates: { lat: 8.3600, lng: 4.6700 },
-      },
+    id: 'ganmo',
+    name: 'Ganmo',
+    lga: 'Ifelodun',
+    coordinates: { lat: 8.3500, lng: 4.6700 }
+  },
 
   // Ilorin South LGA - Headquarters: Fufu
   {
@@ -763,8 +769,8 @@ export const getAreaById = (id: string) => {
   return ILORIN_AREAS.find(area => area.id === id);
 };
 
-// Get kitchen location (Afon, Asa LGA)
+// Get kitchen location (Ganmo, Ifelodun LGA)
 export const getKitchenLocation = () => {
-  const kitchen = ILORIN_AREAS.find(area => area.id === 'afon');
+  const kitchen = ILORIN_AREAS.find(area => area.id === 'ganmo');
   return kitchen || ILORIN_AREAS[0]; // Fallback to first area
 };
