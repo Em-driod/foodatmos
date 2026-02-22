@@ -375,7 +375,7 @@ export const ILORIN_AREAS: IlorinArea[] = [
     id: 'ganmo',
     name: 'Ganmo',
     lga: 'Ifelodun',
-    coordinates: { lat: 8.7500, lng: 4.9000 }
+    coordinates: { lat: 8.467, lng: 4.567 }
   },
 
   // Ilorin South LGA - Headquarters: Fufu
