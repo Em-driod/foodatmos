@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { FoodItem, ProteinOption } from '../types';
 
+// API Configuration - Updated to use Render backend
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://atmosfoodin.onrender.com/api';
 
 const api = axios.create({
@@ -28,6 +29,11 @@ export const createOrder = async (orderData: any) => {
         const response = await api.post('/orders', orderData);
         return response.data;
     } catch (error: any) {
+        if (error.code === 'ECONNREFUSED' || error.message === 'Failed to fetch') {
+            console.error('Backend is down or sleeping. Please try again in a moment.');
+            throw new Error('Backend service is temporarily unavailable. Please try again.');
+        }
+        
         console.error('API Error Response:', error.response?.data);
         console.error('API Error Status:', error.response?.status);
         console.error('Order Data Sent:', orderData);
