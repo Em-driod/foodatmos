@@ -11,6 +11,14 @@ const PaymentInstructions: React.FC<PaymentInstructionsProps> = ({ onClose, onPa
   const [error, setError] = useState<string | null>(null);
   const [orderData, setOrderData] = useState<any>(null);
 
+  const subtotal = typeof orderData?.subtotal === 'number' ? orderData.subtotal : undefined;
+  const deliveryFee = typeof orderData?.deliveryFee === 'number' ? orderData.deliveryFee : undefined;
+  const computedTotal =
+    typeof subtotal === 'number' && typeof deliveryFee === 'number'
+      ? subtotal + deliveryFee
+      : undefined;
+  const totalToPay = typeof computedTotal === 'number' ? computedTotal : orderData?.totalAmount;
+
   useEffect(() => {
     const pendingOrder = sessionStorage.getItem('pendingOrder');
     if (pendingOrder) {
@@ -82,9 +90,24 @@ const PaymentInstructions: React.FC<PaymentInstructionsProps> = ({ onClose, onPa
             <span className="text-amber-800 font-black">Order Reference:</span>
             <span className="text-amber-950 font-black font-mono">{orderData?.orderReference}</span>
           </div>
+
+          {typeof subtotal === 'number' && (
+            <div className="flex items-center justify-between">
+              <span className="text-amber-800 font-black">Goods:</span>
+              <span className="text-amber-950 font-black">₦{subtotal.toLocaleString()}</span>
+            </div>
+          )}
+
+          {typeof deliveryFee === 'number' && (
+            <div className="flex items-center justify-between">
+              <span className="text-amber-800 font-black">Delivery Fee:</span>
+              <span className="text-amber-950 font-black">₦{deliveryFee.toLocaleString()}</span>
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <span className="text-amber-800 font-black">Amount to Pay:</span>
-            <span className="text-amber-950 font-black text-xl">₦{orderData?.totalAmount?.toLocaleString()}</span>
+            <span className="text-amber-950 font-black text-xl">₦{totalToPay?.toLocaleString?.() ?? totalToPay}</span>
           </div>
         </div>
 

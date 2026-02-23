@@ -3,6 +3,7 @@ import React from 'react';
 import { X, Trash2, Plus, Minus, ArrowRight, ShoppingBag, Flame } from 'lucide-react';
 import { CartItem } from '../types';
 
+
 interface CartSidebarProps {
   isOpen: boolean;
   onClose: () => void;
@@ -19,7 +20,6 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, items, onUpd
   };
 
   const subtotal = items.reduce((sum, item) => sum + (getItemPriceWithProteins(item) * item.quantity), 0);
-  const total = subtotal;
 
   return (
     <>
@@ -130,11 +130,6 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, items, onUpd
               </div>
 
               <div className="h-px bg-stone-200 my-4" />
-
-              <div className="flex justify-between items-end">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400/60">Total</span>
-                <span className="text-2xl sm:text-3xl font-serif font-black">₦{total.toLocaleString()}</span>
-              </div>
             </div>
 
             <button

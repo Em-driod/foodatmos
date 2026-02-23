@@ -84,8 +84,8 @@ export const ILORIN_LOCATIONS: IlorinLocation[] = [
   // Western Areas
   {
     name: 'Ganmo / Omosebi',
-    lat: 8.4467,
-    lng: 4.5890,
+    lat: 8.3987,
+    lng: 4.8512,
     keywords: ['ganmo', 'omosebi', 'ganmo garage', 'old oyo road', 'sawmill'],
     landmarks: ['Ganmo Garage', 'Omosebi Market', 'Old Oyo Road Junction', 'Sawmill Area']
   },
