@@ -18,7 +18,15 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ customerEmail, onClose }) =
     const loadOrders = async () => {
       try {
         const email = customerEmail || location.state?.customerEmail;
-        const allOrders = email ? OrderStorageService.getOrdersByEmail(email) : OrderStorageService.getAllOrders();
+        console.log('Loading orders for email:', email);
+        
+        // Debug: Check what's in localStorage
+        const allStored = OrderStorageService.getAllOrders();
+        console.log('All stored orders:', allStored);
+        
+        const allOrders = email ? OrderStorageService.getOrdersByEmail(email) : allStored;
+        console.log('Filtered orders for customer:', allOrders);
+        
         setOrders(allOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
       } catch (error) {
         console.error('Error loading orders:', error);
@@ -67,6 +75,15 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ customerEmail, onClose }) =
     alert('Copied to clipboard!');
   };
 
+  // Clear all orders (for debugging)
+  const clearAllOrders = () => {
+    if (confirm('Are you sure you want to clear all order history?')) {
+      OrderStorageService.clearAllOrders();
+      setOrders([]);
+      console.log('All orders cleared');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#fcfcfc] flex items-center justify-center p-6">
@@ -81,21 +98,29 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ customerEmail, onClose }) =
   return (
     <div className="min-h-screen bg-[#fcfcfc] p-6">
       {/* Header */}
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-serif font-black text-amber-950 mb-2">My Orders</h1>
-            <p className="text-stone-400">What you ordered and picked</p>
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-4xl font-serif font-black text-amber-950 mb-2">My Orders</h1>
+              <p className="text-stone-400">What you ordered and picked</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={clearAllOrders}
+                className="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded-md transition-all"
+              >
+                Clear All
+              </button>
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="text-stone-300 hover:text-amber-950 transition-colors p-2"
+                >
+                  <X size={24} />
+                </button>
+              )}
+            </div>
           </div>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="text-stone-300 hover:text-amber-950 transition-colors p-2"
-            >
-              <X size={24} />
-            </button>
-          )}
-        </div>
 
         {/* Orders List */}
         {orders.length === 0 ? (

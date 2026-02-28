@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { X, MapPin, Loader2, CheckCircle2, ShieldCheck, Landmark, Navigation, ArrowRight, Sparkles, ChefHat } from 'lucide-react';
-import { getAllLGAs, getAreasByLGA, getAreaById } from '../services/ilorinAreas';
+import React, { useState, useRef } from 'react';
+import { FoodItem, CartItem as CartItemType } from '../types';
+import { createOrder } from '../services/api';
+import { X, ChevronRight, ChevronLeft, MapPin, AlertCircle, CheckCircle2, Loader2, Phone, MessageCircle, CreditCard, Landmark, Sparkles, ChefHat, ArrowRight, ShieldCheck, Navigation } from 'lucide-react';
+import { ILORIN_AREAS, getAreaById, getAllLGAs, getAreasByLGA } from '../services/ilorinAreas';
+import { OrderStorageService } from '../services/orderStorage';
 import { getCurrentLocation, UserLocation } from '../services/locationHelper';
 import PaymentInstructions from './PaymentInstructions';
 
@@ -194,6 +197,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
       console.log('Prepared order data:', JSON.stringify(orderData, null, 2));
       console.log('Sending to: /api/orders');
 
+      // Save checkout details for order history
       sessionStorage.setItem('verificationCode', verificationCode);
       sessionStorage.setItem('deliveryMethod', details.deliveryMethod);
       
@@ -208,11 +212,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
         deliveryLGA: selectedLGA
       }));
       
-      // Notify parent component of customer email for order history
-      if (details.email && onCustomerIdentified) {
-        onCustomerIdentified(details.email);
-      }
-      
       // Save cart items for order history
       sessionStorage.setItem('cartItems', JSON.stringify(items.map(item => ({
         id: item.id,
@@ -221,6 +220,43 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
         quantity: item.quantity,
         selectedProteins: item.selectedProteins
       }))));
+
+      // SNEAK IN: Save order to localStorage immediately (before backend call)
+      // This captures the order regardless of backend success/failure
+      const localOrder = {
+        id: `local-${Date.now()}`,
+        orderReference: `ATM-${Math.floor(Math.random() * 9000) + 1000}`,
+        verificationCode,
+        items: items.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          selectedProteins: item.selectedProteins
+        })),
+        customerName: details.fullName,
+        email: details.email,
+        phone: details.phone,
+        address: details.address,
+        deliveryMethod: details.deliveryMethod,
+        deliveryAreaId: selectedAreaId,
+        deliveryLGA: selectedLGA,
+        subtotal,
+        deliveryFee: details.deliveryMethod === 'delivery' ? deliveryFee : 0,
+        totalAmount: subtotal + (details.deliveryMethod === 'delivery' ? deliveryFee : 0),
+        status: 'preparing' as const,
+        createdAt: new Date(),
+        estimatedDeliveryTime: details.deliveryMethod === 'delivery' ? new Date(Date.now() + 35 * 60 * 1000) : undefined
+      };
+
+      // Save to localStorage immediately
+      OrderStorageService.saveOrder(localOrder);
+      console.log('Order saved to localStorage immediately:', localOrder);
+      
+      // Notify parent component of customer email for order history
+      if (details.email && onCustomerIdentified) {
+        onCustomerIdentified(details.email);
+      }
 
       const result = await createOrder(orderData);
 

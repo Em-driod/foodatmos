@@ -28,6 +28,13 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturn }) => {
         const storedMethod = sessionStorage.getItem('deliveryMethod');
         const pendingOrder = sessionStorage.getItem('pendingOrder');
         
+        console.log('PaymentSuccess - Debug:');
+        console.log('storedCode:', storedCode);
+        console.log('storedMethod:', storedMethod);
+        console.log('pendingOrder:', pendingOrder);
+        console.log('checkoutDetails:', sessionStorage.getItem('checkoutDetails'));
+        console.log('cartItems:', sessionStorage.getItem('cartItems'));
+        
         if (storedCode) {
             setVerificationCode(storedCode);
         }
@@ -36,9 +43,15 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturn }) => {
         }
 
         // Save order to local storage for history
-        if (pendingOrder && storedCode) {
+        if (storedCode) {
             try {
-                const orderData = JSON.parse(pendingOrder);
+                // Try to get pending order data, but create order even if it's missing
+                let orderData: any = {};
+                if (pendingOrder) {
+                    orderData = JSON.parse(pendingOrder);
+                } else {
+                    console.log('No pendingOrder found, creating order from session data');
+                }
                 
                 // Create a complete order object
                 const order: Order = {
@@ -77,8 +90,13 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturn }) => {
                 }
 
                 // Save the order
+                console.log('Saving order:', order);
                 OrderStorageService.saveOrder(order);
                 setLatestOrderId(order.id);
+                
+                // Verify it was saved
+                const savedOrder = OrderStorageService.getOrderById(order.id);
+                console.log('Order saved successfully:', savedOrder);
                 
                 // Clean up session storage
                 sessionStorage.removeItem('pendingOrder');
