@@ -233,8 +233,8 @@ const OrderDetail: React.FC = () => {
                 {order.status === 'preparing' ? <ChefHat size={20} className="animate-pulse" /> : <CheckCircle size={20} />}
               </div>
               <div className="flex-1">
-                <div className="font-black text-amber-950"> your Order will be ready in the next 10 minutes</div>
-                
+                <div className="font-black text-amber-950">Order Confirmed</div>
+                <div className="text-sm text-stone-600">Your order has been received and is being prepared</div>
               </div>
             </div>
 
@@ -243,10 +243,10 @@ const OrderDetail: React.FC = () => {
                 {order.status === 'ready' ? <Package size={20} /> : order.status === 'out-for-delivery' || order.status === 'completed' ? <CheckCircle size={20} /> : <Package size={20} />}
               </div>
               <div className="flex-1">
-                <div className="font-black text-amber-950">Order Ready</div>
+                <div className="font-black text-amber-950">Order </div>
                 <div className="text-sm text-stone-600">
                   {order.deliveryMethod === 'pickup' 
-                    ? 'Your order is ready for pickup'
+                    ? 'Pick up in the next 15 minutes'
                     : 'Your order is ready and waiting for delivery'
                   }
                 </div>
