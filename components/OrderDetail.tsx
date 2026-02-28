@@ -233,8 +233,8 @@ const OrderDetail: React.FC = () => {
                 {order.status === 'preparing' ? <ChefHat size={20} className="animate-pulse" /> : <CheckCircle size={20} />}
               </div>
               <div className="flex-1">
-                <div className="font-black text-amber-950">Order Confirmed</div>
-                <div className="text-sm text-stone-600">Your order has been received and is being prepared</div>
+                <div className="font-black text-amber-950"> your Order will be ready in the next 10 minutes</div>
+                
               </div>
             </div>
 
