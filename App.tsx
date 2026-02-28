@@ -27,6 +27,7 @@ const App: React.FC = () => {
   const [isMultiOrderOpen, setIsMultiOrderOpen] = useState(false);
   const [activeMultiItem, setActiveMultiItem] = useState<FoodItem | null>(null);
   const [showToast, setShowToast] = useState<{ message: string, isNext: boolean } | null>(null);
+  const [currentCustomerEmail, setCurrentCustomerEmail] = useState<string>('');
   const menuRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -118,6 +119,10 @@ const App: React.FC = () => {
     setCart([]);
     setIsCheckoutOpen(false);
     setIsCartOpen(false);
+  };
+
+  const handleCheckout = (customerEmail: string) => {
+    setCurrentCustomerEmail(customerEmail);
   };
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -388,6 +393,7 @@ const App: React.FC = () => {
             onClose={() => setIsCheckoutOpen(false)}
             items={cart}
             onPaymentSuccess={handlePaymentSuccess}
+            onCustomerIdentified={handleCheckout}
           />
 
           <MultiOrderModal
@@ -404,7 +410,7 @@ const App: React.FC = () => {
         setCart([]);
         navigate('/');
       }} />} />
-      <Route path="/orders" element={<OrderHistory />} />
+      <Route path="/orders" element={<OrderHistory customerEmail={currentCustomerEmail} />} />
       <Route path="/order/:orderId" element={<OrderDetail />} />
     </Routes>
   );

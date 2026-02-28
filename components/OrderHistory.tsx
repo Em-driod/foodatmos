@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, MapPin, Package, CheckCircle, AlertCircle, X, ArrowRight, Calendar, Filter, Search } from 'lucide-react';
 import { Order, OrderStorageService } from '../services/orderStorage';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface OrderHistoryProps {
-  email?: string;
+  customerEmail?: string; // Customer's email to show their orders only
   onClose?: () => void;
 }
 
-const OrderHistory: React.FC<OrderHistoryProps> = ({ email, onClose }) => {
+const OrderHistory: React.FC<OrderHistoryProps> = ({ customerEmail, onClose }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,6 +20,10 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ email, onClose }) => {
   useEffect(() => {
     const loadOrders = async () => {
       try {
+        // Get customer email from props or navigation state
+        const email = customerEmail || location.state?.customerEmail;
+        
+        // Only show orders for the specific customer email
         const allOrders = email ? OrderStorageService.getOrdersByEmail(email) : OrderStorageService.getAllOrders();
         setOrders(allOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
         setFilteredOrders(allOrders);
@@ -30,7 +35,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ email, onClose }) => {
     };
 
     loadOrders();
-  }, [email]);
+  }, [customerEmail, location.state?.customerEmail]);
 
   useEffect(() => {
     let filtered = orders;

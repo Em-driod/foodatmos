@@ -15,6 +15,7 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturn }) => {
     const [verificationCode, setVerificationCode] = useState<string>('');
     const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
     const [latestOrderId, setLatestOrderId] = useState<string | null>(null);
+    const [customerEmail, setCustomerEmail] = useState<string>('');
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -66,6 +67,7 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturn }) => {
                     order.email = details.email || '';
                     order.phone = details.phone || '';
                     order.address = details.address || '';
+                    setCustomerEmail(details.email || ''); // Store customer email for navigation
                 }
 
                 // Try to get cart items from session storage
@@ -188,10 +190,10 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturn }) => {
                         )}
                         
                         <button
-                            onClick={() => navigate('/orders')}
+                            onClick={() => navigate('/orders', { state: { customerEmail } })}
                             className="w-full bg-stone-100 hover:bg-stone-200 text-stone-700 py-4 rounded-[1.5rem] font-black flex items-center justify-center gap-4 transition-all text-base uppercase tracking-[0.2em]"
                         >
-                            View Order History
+                            View My Orders
                         </button>
                         
                         <button

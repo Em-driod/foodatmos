@@ -28,9 +28,10 @@ interface CheckoutModalProps {
   onClose: () => void;
   items: CartItem[];
   onPaymentSuccess: () => void;
+  onCustomerIdentified?: (email: string) => void; // New prop to pass customer email
 }
 
-const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, onPaymentSuccess }) => {
+const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, onPaymentSuccess, onCustomerIdentified }) => {
   const [step, setStep] = useState<'details' | 'payment-instructions' | 'processing' | 'success'>('details');
   const [error, setError] = useState<string | null>(null);
   const [addressFormatError, setAddressFormatError] = useState<string | null>(null);
@@ -206,6 +207,11 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
         deliveryAreaId: selectedAreaId,
         deliveryLGA: selectedLGA
       }));
+      
+      // Notify parent component of customer email for order history
+      if (details.email && onCustomerIdentified) {
+        onCustomerIdentified(details.email);
+      }
       
       // Save cart items for order history
       sessionStorage.setItem('cartItems', JSON.stringify(items.map(item => ({
