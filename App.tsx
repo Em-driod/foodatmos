@@ -28,6 +28,8 @@ const App: React.FC = () => {
   const [activeMultiItem, setActiveMultiItem] = useState<FoodItem | null>(null);
   const [showToast, setShowToast] = useState<{ message: string, isNext: boolean } | null>(null);
   const [currentCustomerEmail, setCurrentCustomerEmail] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -47,8 +49,18 @@ const App: React.FC = () => {
   }, []);
 
   const filteredItems = useMemo(() => {
-    return products.filter(item => item.category !== FoodCategory.DRINKS);
-  }, [products]);
+    let items = products.filter(item => item.category !== FoodCategory.DRINKS);
+    
+    // Apply search filter if search query exists
+    if (searchQuery.trim()) {
+      items = items.filter(item => 
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    return items;
+  }, [products, searchQuery]);
 
   const addToCart = (item: FoodItem, proteins?: ProteinOption[]) => {
     const proteinIdString = proteins?.map(p => p.id).sort().join('-') || 'no-protein';
@@ -131,7 +143,14 @@ const App: React.FC = () => {
     <Routes>
       <Route path="/" element={
         <div className="min-h-screen bg-[#fcfcfc] text-orange-400 antialiased selection:bg-orange-100 relative">
-          <Navbar cartCount={cartCount} onCartClick={() => setIsCartOpen(true)} />
+          <Navbar 
+            cartCount={cartCount} 
+            onCartClick={() => setIsCartOpen(true)}
+            onSearchClick={() => setIsSearchOpen(!isSearchOpen)}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            isSearchOpen={isSearchOpen}
+          />
 
           {/* Background Decorative Elements */}
           <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">

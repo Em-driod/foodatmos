@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, MapPin, Package, CheckCircle, AlertCircle, X, ArrowRight, Calendar, Copy } from 'lucide-react';
+import { Clock, MapPin, Package, CheckCircle, AlertCircle, X, ArrowRight, Calendar, Copy, Home } from 'lucide-react';
 import { Order, OrderStorageService } from '../services/orderStorage';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -105,6 +105,13 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ customerEmail, onClose }) =
               <p className="text-stone-400">What you ordered and picked</p>
             </div>
             <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate('/')}
+                className="flex items-center gap-2 bg-amber-950 hover:bg-black text-white px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest transition-all"
+              >
+                <Home size={16} />
+                Back to Home
+              </button>
               <button
                 onClick={clearAllOrders}
                 className="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded-md transition-all"
