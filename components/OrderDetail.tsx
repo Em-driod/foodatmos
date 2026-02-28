@@ -235,16 +235,7 @@ const OrderDetail: React.FC = () => {
               <div className="flex-1">
                 <div className="font-black text-amber-950">Order Confirmed</div>
                 <div className="text-sm text-stone-600">Your order has been received and is being prepared</div>
-              </div>
-            </div>
-
-            <div className={`flex items-center gap-4 p-4 rounded-xl ${order.status === 'ready' ? 'bg-blue-50 border border-blue-200' : order.status === 'out-for-delivery' || order.status === 'completed' ? 'bg-emerald-50 border border-emerald-200' : 'bg-stone-50'}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${order.status === 'ready' ? 'bg-blue-400 text-white' : order.status === 'out-for-delivery' || order.status === 'completed' ? 'bg-emerald-500 text-white' : 'bg-stone-300 text-white'}`}>
-                {order.status === 'ready' ? <Package size={20} /> : order.status === 'out-for-delivery' || order.status === 'completed' ? <CheckCircle size={20} /> : <Package size={20} />}
-              </div>
-              <div className="flex-1">
-                <div className="font-black text-amber-950">Order </div>
-                <div className="text-sm text-stone-600">
+                 <div className="text-sm text-stone-600">
                   {order.deliveryMethod === 'pickup' 
                     ? 'Pick up in the next 15 minutes'
                     : 'Your order is ready and waiting for delivery'
@@ -252,6 +243,8 @@ const OrderDetail: React.FC = () => {
                 </div>
               </div>
             </div>
+
+           
 
             {order.deliveryMethod === 'delivery' && (
               <div className={`flex items-center gap-4 p-4 rounded-xl ${order.status === 'out-for-delivery' ? 'bg-purple-50 border border-purple-200' : order.status === 'completed' ? 'bg-emerald-50 border border-emerald-200' : 'bg-stone-50'}`}>
@@ -270,20 +263,7 @@ const OrderDetail: React.FC = () => {
               </div>
             )}
 
-            <div className={`flex items-center gap-4 p-4 rounded-xl ${order.status === 'completed' ? 'bg-emerald-50 border border-emerald-200' : 'bg-stone-50'}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${order.status === 'completed' ? 'bg-emerald-500 text-white' : 'bg-stone-300 text-white'}`}>
-                <CheckCircle size={20} />
-              </div>
-              <div className="flex-1">
-                <div className="font-black text-amber-950">Order Completed</div>
-                <div className="text-sm text-stone-600">
-                  {order.status === 'completed' 
-                    ? 'Your order has been successfully delivered'
-                    : 'Waiting for completion'
-                  }
-                </div>
-              </div>
-            </div>
+           
           </div>
         </div>
 
