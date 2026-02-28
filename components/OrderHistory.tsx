@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, MapPin, Package, CheckCircle, AlertCircle, X, ArrowRight, Calendar, Filter, Search } from 'lucide-react';
+import { Clock, MapPin, Package, CheckCircle, AlertCircle, X, ArrowRight, Calendar, Copy } from 'lucide-react';
 import { Order, OrderStorageService } from '../services/orderStorage';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface OrderHistoryProps {
-  customerEmail?: string; // Customer's email to show their orders only
+  customerEmail?: string;
   onClose?: () => void;
 }
 
@@ -12,21 +12,14 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ customerEmail, onClose }) =
   const navigate = useNavigate();
   const location = useLocation();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<Order['status'] | 'all'>('all');
 
   useEffect(() => {
     const loadOrders = async () => {
       try {
-        // Get customer email from props or navigation state
         const email = customerEmail || location.state?.customerEmail;
-        
-        // Only show orders for the specific customer email
         const allOrders = email ? OrderStorageService.getOrdersByEmail(email) : OrderStorageService.getAllOrders();
         setOrders(allOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-        setFilteredOrders(allOrders);
       } catch (error) {
         console.error('Error loading orders:', error);
       } finally {
@@ -36,26 +29,6 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ customerEmail, onClose }) =
 
     loadOrders();
   }, [customerEmail, location.state?.customerEmail]);
-
-  useEffect(() => {
-    let filtered = orders;
-
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(order => 
-        order.orderReference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.verificationCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.customerName.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filter by status
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(order => order.status === statusFilter);
-    }
-
-    setFilteredOrders(filtered);
-  }, [orders, searchTerm, statusFilter]);
 
   const getStatusColor = (status: Order['status']) => {
     switch (status) {
@@ -68,23 +41,12 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ customerEmail, onClose }) =
     }
   };
 
-  const getStatusIcon = (status: Order['status']) => {
-    switch (status) {
-      case 'preparing': return <Clock size={16} className="animate-pulse" />;
-      case 'ready': return <Package size={16} />;
-      case 'out-for-delivery': return <MapPin size={16} />;
-      case 'completed': return <CheckCircle size={16} />;
-      case 'cancelled': return <AlertCircle size={16} />;
-      default: return <Package size={16} />;
-    }
-  };
-
   const getStatusText = (status: Order['status']) => {
     switch (status) {
       case 'preparing': return 'Preparing';
-      case 'ready': return 'Ready for Pickup';
-      case 'out-for-delivery': return 'Out for Delivery';
-      case 'completed': return 'Completed';
+      case 'ready': return 'Ready';
+      case 'out-for-delivery': return 'On the way';
+      case 'completed': return 'Delivered';
       case 'cancelled': return 'Cancelled';
       default: return status;
     }
@@ -100,9 +62,9 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ customerEmail, onClose }) =
     }).format(date);
   };
 
-  const handleOrderClick = (orderId: string) => {
-    navigate(`/order/${orderId}`);
-    onClose?.();
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert('Copied to clipboard!');
   };
 
   if (loading) {
@@ -110,7 +72,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ customerEmail, onClose }) =
       <div className="min-h-screen bg-[#fcfcfc] flex items-center justify-center p-6">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-stone-400 font-bold uppercase tracking-widest text-[10px]">Loading Order History...</p>
+          <p className="text-stone-400 font-bold uppercase tracking-widest text-[10px]">Loading Orders...</p>
         </div>
       </div>
     );
@@ -119,11 +81,11 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ customerEmail, onClose }) =
   return (
     <div className="min-h-screen bg-[#fcfcfc] p-6">
       {/* Header */}
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-serif font-black text-amber-950 mb-2">Order History</h1>
-            <p className="text-stone-400">Track your Atmos orders and delivery status</p>
+            <h1 className="text-4xl font-serif font-black text-amber-950 mb-2">My Orders</h1>
+            <p className="text-stone-400">What you ordered and picked</p>
           </div>
           {onClose && (
             <button
@@ -135,122 +97,92 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ customerEmail, onClose }) =
           )}
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-6 mb-8 space-y-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
-              <input
-                type="text"
-                placeholder="Search by order reference, verification code, or name..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-amber-200 outline-none transition-all font-medium"
-              />
-            </div>
-
-            {/* Status Filter */}
-            <div className="flex items-center gap-2">
-              <Filter size={20} className="text-stone-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as Order['status'] | 'all')}
-                className="px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-amber-200 outline-none transition-all font-medium"
-              >
-                <option value="all">All Orders</option>
-                <option value="preparing">Preparing</option>
-                <option value="ready">Ready</option>
-                <option value="out-for-delivery">Out for Delivery</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 pt-4 border-t border-stone-100">
-            <div className="text-center">
-              <div className="text-2xl font-serif font-black text-amber-950">{filteredOrders.length}</div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Orders</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-serif font-black text-amber-600">{filteredOrders.filter(o => o.status === 'preparing').length}</div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-stone-400">Preparing</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-serif font-black text-blue-600">{filteredOrders.filter(o => o.status === 'ready').length}</div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-stone-400">Ready</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-serif font-black text-purple-600">{filteredOrders.filter(o => o.status === 'out-for-delivery').length}</div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-stone-400">On the Way</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-serif font-black text-emerald-600">{filteredOrders.filter(o => o.status === 'completed').length}</div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-stone-400">Completed</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-serif font-black text-red-600">{filteredOrders.filter(o => o.status === 'cancelled').length}</div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-stone-400">Cancelled</div>
-            </div>
-          </div>
-        </div>
-
         {/* Orders List */}
-        {filteredOrders.length === 0 ? (
+        {orders.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-12 text-center">
             <Package size={64} className="mx-auto text-stone-300 mb-4" />
-            <h3 className="text-xl font-serif font-black text-stone-600 mb-2">No Orders Found</h3>
-            <p className="text-stone-400">
-              {searchTerm || statusFilter !== 'all' 
-                ? 'Try adjusting your filters or search terms.'
-                : 'You haven\'t placed any orders yet. Start by ordering from our menu!'}
-            </p>
+            <h3 className="text-xl font-serif font-black text-stone-600 mb-2">No Orders Yet</h3>
+            <p className="text-stone-400">You haven't placed any orders. Start by ordering from our menu!</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {filteredOrders.map((order) => (
+          <div className="space-y-6">
+            {orders.map((order) => (
               <div
                 key={order.id}
-                onClick={() => handleOrderClick(order.id)}
-                className="bg-white rounded-2xl shadow-sm border border-stone-100 p-6 hover:shadow-md transition-all cursor-pointer group"
+                className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden"
               >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  {/* Order Info */}
-                  <div className="flex-1 space-y-2">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                      <span className="text-sm font-black text-amber-950 font-mono">{order.orderReference}</span>
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(order.status)}`}>
-                        {getStatusIcon(order.status)}
-                        {getStatusText(order.status)}
+                {/* Order Header */}
+                <div className="p-6 border-b border-stone-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-sm font-black text-amber-950 font-mono">{order.orderReference}</span>
+                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(order.status)}`}>
+                          {getStatusText(order.status)}
+                        </span>
+                      </div>
+                      <div className="text-sm text-stone-600">
+                        {formatDate(order.createdAt)} • {order.deliveryMethod === 'delivery' ? 'Delivery' : 'Pickup'}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-serif font-black text-amber-950">₦{order.totalAmount.toLocaleString()}</div>
+                      <div className="text-xs text-stone-400">Verification: {order.verificationCode}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Order Items */}
+                <div className="p-6">
+                  <h3 className="text-sm font-black text-stone-400 uppercase tracking-widest mb-4">Items Ordered</h3>
+                  <div className="space-y-3">
+                    {order.items.map((item, index) => (
+                      <div key={index} className="flex items-center justify-between py-3 border-b border-stone-50 last:border-0">
+                        <div className="flex-1">
+                          <div className="font-black text-amber-950">{item.name}</div>
+                          <div className="text-sm text-stone-600">
+                            Quantity: {item.quantity}
+                            {item.selectedProteins && item.selectedProteins.length > 0 && (
+                              <span className="ml-2">
+                                • {item.selectedProteins.map(p => p.name).join(', ')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-black text-amber-950">
+                            ₦{((item.price + (item.selectedProteins?.reduce((sum, p) => sum + p.price, 0) || 0)) * item.quantity).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Order Actions */}
+                  <div className="flex items-center justify-between mt-6 pt-4 border-t border-stone-100">
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => copyToClipboard(order.verificationCode)}
+                        className="text-xs bg-amber-100 hover:bg-amber-200 text-amber-700 px-3 py-1 rounded-md transition-all flex items-center gap-1"
+                      >
+                        <Copy size={12} />
+                        Copy Code
+                      </button>
+                      <span className="text-xs text-stone-400">
+                        {order.deliveryMethod === 'pickup' 
+                          ? 'Show this code at pickup' 
+                          : 'Show this code to rider'
+                        }
                       </span>
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm text-stone-600">
-                      <div className="flex items-center gap-2">
-                        <Calendar size={14} />
-                        {formatDate(order.createdAt)}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Package size={14} />
-                        {order.items.length} items • ₦{order.totalAmount.toLocaleString()}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {order.deliveryMethod === 'delivery' ? <MapPin size={14} /> : <Package size={14} />}
-                        {order.deliveryMethod === 'delivery' ? 'Delivery' : 'Pickup'}
-                      </div>
-                    </div>
-
-                    <div className="text-sm">
-                      <span className="text-stone-400">Verification:</span>
-                      <span className="font-mono text-amber-600 ml-2">{order.verificationCode}</span>
-                    </div>
-                  </div>
-
-                  {/* Arrow */}
-                  <div className="flex items-center">
-                    <ArrowRight size={20} className="text-stone-300 group-hover:text-amber-950 transition-colors" />
+                    <button
+                      onClick={() => navigate(`/order/${order.id}`)}
+                      className="text-sm bg-amber-950 hover:bg-black text-white px-4 py-2 rounded-xl font-black transition-all flex items-center gap-2"
+                    >
+                      View Details
+                      <ArrowRight size={16} />
+                    </button>
                   </div>
                 </div>
               </div>
