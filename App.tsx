@@ -8,6 +8,8 @@ import DrinksDrawer from './components/DrinksDrawer';
 
 import CheckoutModal from './components/CheckoutModal';
 import MultiOrderModal from './components/MultiOrderModal';
+import OrderHistory from './components/OrderHistory';
+import OrderDetail from './components/OrderDetail';
 import { ArrowRight, Soup, Milk, Flame, Utensils, Star, CheckCircle2, Award, Clock, MapPin, Truck, Sparkles, MoveRight } from 'lucide-react';
 import { getProducts, getProteins } from './services/api';
 import { Routes, Route, useNavigate } from 'react-router-dom';
@@ -402,6 +404,8 @@ const App: React.FC = () => {
         setCart([]);
         navigate('/');
       }} />} />
+      <Route path="/orders" element={<OrderHistory />} />
+      <Route path="/order/:orderId" element={<OrderDetail />} />
     </Routes>
   );
 };

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, ChefHat, ArrowRight, Landmark, Loader2, Sparkles, Key } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { CheckCircle2, ChefHat, ArrowRight, Landmark, Loader2, Sparkles, Key, Package } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getOrder } from '../services/api';
+import { OrderStorageService, Order } from '../services/orderStorage';
 
 interface PaymentSuccessProps {
     onReturn: () => void;
@@ -9,9 +10,11 @@ interface PaymentSuccessProps {
 
 const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturn }) => {
     const location = useLocation();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [verificationCode, setVerificationCode] = useState<string>('');
     const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
+    const [latestOrderId, setLatestOrderId] = useState<string | null>(null);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -22,12 +25,69 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturn }) => {
         // Extract verification codes from session storage (set during checkout)
         const storedCode = sessionStorage.getItem('verificationCode');
         const storedMethod = sessionStorage.getItem('deliveryMethod');
+        const pendingOrder = sessionStorage.getItem('pendingOrder');
         
         if (storedCode) {
             setVerificationCode(storedCode);
         }
         if (storedMethod) {
             setDeliveryMethod(storedMethod as 'delivery' | 'pickup');
+        }
+
+        // Save order to local storage for history
+        if (pendingOrder && storedCode) {
+            try {
+                const orderData = JSON.parse(pendingOrder);
+                
+                // Create a complete order object
+                const order: Order = {
+                    id: orderData.orderId || `order-${Date.now()}`,
+                    orderReference: orderData.orderReference || reference || `ATM-${Math.floor(Math.random() * 9000) + 1000}`,
+                    verificationCode: storedCode,
+                    items: [], // This would be populated from cart data
+                    customerName: '', // This would be populated from form data
+                    email: '',
+                    phone: '',
+                    address: '',
+                    deliveryMethod: storedMethod as 'delivery' | 'pickup',
+                    subtotal: orderData.subtotal || 0,
+                    deliveryFee: orderData.deliveryFee || 0,
+                    totalAmount: orderData.totalAmount || 0,
+                    status: 'preparing',
+                    createdAt: new Date(),
+                    estimatedDeliveryTime: storedMethod === 'delivery' ? new Date(Date.now() + 35 * 60 * 1000) : undefined
+                };
+
+                // Try to get additional order details from session storage
+                const checkoutDetails = sessionStorage.getItem('checkoutDetails');
+                if (checkoutDetails) {
+                    const details = JSON.parse(checkoutDetails);
+                    order.customerName = details.fullName || '';
+                    order.email = details.email || '';
+                    order.phone = details.phone || '';
+                    order.address = details.address || '';
+                }
+
+                // Try to get cart items from session storage
+                const cartItems = sessionStorage.getItem('cartItems');
+                if (cartItems) {
+                    order.items = JSON.parse(cartItems);
+                }
+
+                // Save the order
+                OrderStorageService.saveOrder(order);
+                setLatestOrderId(order.id);
+                
+                // Clean up session storage
+                sessionStorage.removeItem('pendingOrder');
+                sessionStorage.removeItem('verificationCode');
+                sessionStorage.removeItem('deliveryMethod');
+                sessionStorage.removeItem('checkoutDetails');
+                sessionStorage.removeItem('cartItems');
+                
+            } catch (error) {
+                console.error('Error saving order:', error);
+            }
         }
 
         // Don't try to fetch order - it will be created by webhook
@@ -116,10 +176,27 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturn }) => {
                         </div>
                     </div>
 
-                    <div className="pt-8">
+                    <div className="pt-8 space-y-4">
+                        {latestOrderId && (
+                            <button
+                                onClick={() => navigate(`/order/${latestOrderId}`)}
+                                className="w-full bg-amber-100 hover:bg-amber-200 text-amber-950 py-4 rounded-[1.5rem] font-black flex items-center justify-center gap-4 transition-all text-base uppercase tracking-[0.2em]"
+                            >
+                                <Package size={20} />
+                                View Order Details
+                            </button>
+                        )}
+                        
+                        <button
+                            onClick={() => navigate('/orders')}
+                            className="w-full bg-stone-100 hover:bg-stone-200 text-stone-700 py-4 rounded-[1.5rem] font-black flex items-center justify-center gap-4 transition-all text-base uppercase tracking-[0.2em]"
+                        >
+                            View Order History
+                        </button>
+                        
                         <button
                             onClick={onReturn}
-                            className="group w-full bg-orange-950 hover:bg-black text-white py-6 rounded-[1.5rem] font-black flex items-center justify-center gap-4 transition-all shadow-xl active:scale-95 text-base uppercase tracking-[0.2em]"
+                            className="w-full bg-amber-950 hover:bg-black text-white py-6 rounded-[1.5rem] font-black flex items-center justify-center gap-4 transition-all shadow-xl active:scale-95 text-base uppercase tracking-[0.2em]"
                         >
                             Return to Kitchen <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
                         </button>

@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { ShoppingBag, Search, Flame } from 'lucide-react';
+import { ShoppingBag, Search, Flame, Package } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface NavbarProps {
   cartCount: number;
@@ -8,6 +9,7 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ cartCount, onCartClick }) => {
+  const navigate = useNavigate();
   return (
     <nav className="fixed top-0 left-0 right-0 z-[100] px-6 py-6 pointer-events-none">
       <div className="max-w-7xl mx-auto flex items-center justify-between pointer-events-auto atmos-glass px-8 py-4 rounded-2xl shadow-xl border border-amber-100">
@@ -19,6 +21,14 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onCartClick }) => {
         </div>
 
         <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate('/orders')}
+            className="hidden sm:flex items-center gap-2.5 bg-stone-50 hover:bg-stone-100 px-6 py-3 rounded-xl transition-all text-stone-700 font-black text-[11px] uppercase tracking-[0.2em] border border-stone-100"
+          >
+            <Package size={16} />
+            <span>Orders</span>
+          </button>
+          
           <button className="hidden sm:flex items-center gap-2.5 bg-amber-50 hover:bg-amber-100 px-6 py-3 rounded-xl transition-all text-amber-950 font-black text-[11px] uppercase tracking-[0.2em] border border-amber-100">
             <Search size={16} />
             <span>Search</span>

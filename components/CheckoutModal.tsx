@@ -195,6 +195,26 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, items, o
 
       sessionStorage.setItem('verificationCode', verificationCode);
       sessionStorage.setItem('deliveryMethod', details.deliveryMethod);
+      
+      // Save checkout details for order history
+      sessionStorage.setItem('checkoutDetails', JSON.stringify({
+        fullName: details.fullName,
+        email: details.email,
+        phone: details.phone,
+        address: details.address,
+        deliveryMethod: details.deliveryMethod,
+        deliveryAreaId: selectedAreaId,
+        deliveryLGA: selectedLGA
+      }));
+      
+      // Save cart items for order history
+      sessionStorage.setItem('cartItems', JSON.stringify(items.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        selectedProteins: item.selectedProteins
+      }))));
 
       const result = await createOrder(orderData);
 
